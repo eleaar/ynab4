@@ -6,3 +6,4 @@ scalaVersion := "2.11.7"
 
 showSuccess := false
 
+libraryDependencies += "joda-time" % "joda-time" % "2.9.3"

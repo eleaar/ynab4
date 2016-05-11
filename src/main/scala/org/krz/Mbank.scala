@@ -1,31 +1,6 @@
 package org.krz
 
-
 import scala.io.Source
-
-case class YnabColumn(
-  date: String,
-  category: String = "",
-  payee: String,
-  memo: String,
-  inflow: BigDecimal,
-  outflow: String = ""
-) {
-
-  def toCsv: Seq[String] = {
-    def stringToCsv(s: String) = s""""$s""""
-    def numberToCsv(b: BigDecimal) = b.toString()
-
-    Seq(
-      date,
-      category,
-      stringToCsv(payee),
-      stringToCsv(memo),
-      numberToCsv(inflow),
-      outflow
-    )
-  }
-}
 
 object Mbank {
 
@@ -33,13 +8,10 @@ object Mbank {
   val mbankSeparator = ";"
   val mbankComma = ","
 
-  val ynabSeparator = ","
-  val ynabColumns = Seq("Date", "Category", "Payee", "Memo", "Inflow", "Outflow")
-
   def main(args: Array[String]): Unit = {
     val input = args.lift(0).getOrElse(sys.error("Please provide input file as first argument"))
 
-    println(ynabColumns.mkString(ynabSeparator))
+    println(Ynab.ynabColumns.mkString(Ynab.ynabSeparator))
     Source.fromFile(input, mbankEncoding).getLines()
       .drop(37) // meta at the beginning
       .drop(1) // headers
@@ -54,7 +26,7 @@ object Mbank {
   def importColumns = (data: String) => data.split(mbankSeparator).toSeq.map(cleanup)
 
   def reorganiseColumns = (column: Seq[String]) => {
-    YnabColumn(
+    Ynab.Column(
       // TODO reformat date
       date = column(0),
       payee = column(4),
@@ -63,5 +35,5 @@ object Mbank {
     )
   }
 
-  def exportColumns = (column: YnabColumn) => column.toCsv.mkString(ynabSeparator)
+  def exportColumns = (column: Ynab.Column) => column.toCsv.mkString(Ynab.ynabSeparator)
 }
