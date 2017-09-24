@@ -1,7 +1,7 @@
 package org.krz
 
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 import scala.io.Source
 import scala.util.Try
@@ -9,7 +9,7 @@ import scala.util.Try
 object Alior {
 
   private case class Row(
-    data: DateTime,
+    data: LocalDate,
     odbiorca: String,
     rachunek: String,
     tytul: String,
@@ -19,7 +19,7 @@ object Alior {
   private val encoding = "UTF-8"
   private val separator = ","
   private val comma = "."
-  private val dateFormat = "dd-mm-YYYY"
+  private val dateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
   def main(args: Array[String]): Unit = {
     val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
@@ -40,7 +40,7 @@ object Alior {
   private def importColumns = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(date, odbiorca, rachunek, tytul, kwota) =>
       Row(
-        data = DateTime.parse(date, DateTimeFormat.forPattern(dateFormat)),
+        data = LocalDate.parse(date, dateFormat),
         odbiorca = odbiorca,
         rachunek = rachunek,
         tytul = tytul,

@@ -1,14 +1,15 @@
 package org.krz
 
-import org.joda.time.DateTime
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 import scala.io.Source
 
 object Boursorama {
 
   private case class Row(
-    dateOperation: DateTime,
-    dateValeur: DateTime,
+    dateOperation: LocalDate,
+    dateValeur: LocalDate,
     libelle: String,
     categorie: String,
     categoryParent: String,
@@ -21,7 +22,7 @@ object Boursorama {
 
   private val encoding = "Windows-1250"
   private val separator = ";"
-  private val dateFormat = "dd/mm/YYYY"
+  private val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
   def main(args: Array[String]): Unit = {
     val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
@@ -36,8 +37,8 @@ object Boursorama {
   private def importColumns = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(dateOperation, dateValeur, libelle, categorie, categoryParent, supplierFound, amount, accountNum, accountLabel, accountBalance) =>
       Row(
-        dateOperation = cleanupDate(dateOperation, dateFormat),
-        dateValeur = cleanupDate(dateValeur, dateFormat),
+        dateOperation = LocalDate.parse(dateOperation, dateFormat),
+        dateValeur = LocalDate.parse(dateValeur, dateFormat),
         libelle = libelle,
         categorie = categorie,
         categoryParent = categoryParent,

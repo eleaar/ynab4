@@ -1,17 +1,18 @@
 package org.krz
 
-import org.joda.time.DateTime
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object Ynab {
 
   private val ynabSeparator = ","
   private val ynabColumns = Seq("Date", "Category", "Payee", "Memo", "Inflow", "Outflow")
-  private val dateFormat = "dd/mm/YYYY"
+  private val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
   val ynabHeader: String = ynabColumns.mkString(Ynab.ynabSeparator)
 
   case class Row(
-    date: DateTime,
+    date: LocalDate,
     category: String = "",
     payee: String,
     memo: String,
@@ -24,7 +25,7 @@ object Ynab {
       def numberToCsv(b: BigDecimal) = b.toString()
 
       Seq(
-        date.toString(Ynab.dateFormat),
+        date.format(dateFormat),
         category,
         stringToCsv(payee),
         stringToCsv(memo),

@@ -1,13 +1,14 @@
 package org.krz
 
-import org.joda.time.DateTime
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 import scala.io.Source
 
 object SocieteGenerale {
 
   private case class Row(
-    date: DateTime,
+    date: LocalDate,
     libelle: String,
     detail: String,
     montant: BigDecimal,
@@ -16,7 +17,7 @@ object SocieteGenerale {
 
   private val encoding = "Windows-1250"
   private val separator = ";"
-  private val dateFormat = "dd/mm/YYYY"
+  private val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
   def main(args: Array[String]): Unit = {
     val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
@@ -32,7 +33,7 @@ object SocieteGenerale {
   private def importRow = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(date, libelle, detail, montant, devise) =>
       Row(
-        date = cleanupDate(date, dateFormat),
+        date = LocalDate.parse(date, dateFormat),
         libelle = libelle,
         detail = detail,
         montant = cleanupNumeric(montant),
