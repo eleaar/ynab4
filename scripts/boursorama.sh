@@ -1,2 +1,10 @@
 #!/usr/bin/env bash
-sbt "runMain org.krz.Boursorama data/boursorama-in.csv" | sed '1,16d' | ghead -n -4 > data/boursorama-out.csv
+
+INPUT=data/boursorama-in.csv
+OUTPUT=data/boursorama-out.csv
+MAINCLASS=org.krz.Boursorama
+
+sbt "runMain $MAINCLASS $INPUT" | sed '1,12d' | ghead -n -4 > $OUTPUT
+if [ `wc -l < $INPUT` != `wc -l < $OUTPUT` ]; then
+  echo "Some lines were dropped!"
+fi
