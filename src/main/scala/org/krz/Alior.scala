@@ -8,7 +8,7 @@ import scala.util.Try
 
 object Alior {
 
-  case class Column(
+  private case class Row(
     data: DateTime,
     odbiorca: String,
     rachunek: String,
@@ -16,32 +16,30 @@ object Alior {
     kwota: BigDecimal
   )
 
-  val encoding = "UTF-8"
-  val separator = ","
-  val comma = "."
-  val dateFormat = "dd-mm-YYYY"
+  private val encoding = "UTF-8"
+  private val separator = ","
+  private val comma = "."
+  private val dateFormat = "dd-mm-YYYY"
 
   def main(args: Array[String]): Unit = {
-    val input = args.lift(0).getOrElse(sys.error("Please provide input file as first argument"))
+    val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
     val conversionRate: BigDecimal = args.lift(1).flatMap(x => Try(BigDecimal(x)).toOption).getOrElse(1)
     val convert = convertCurrency(conversionRate)
 
-    println(Ynab.ynabColumns.mkString(Ynab.ynabSeparator))
+    println(Ynab.ynabHeader)
     Source.fromFile(input, encoding).getLines()
       .drop(1) // headers
       .takeWhile(_.nonEmpty) // discard last few lines
-      .foreach(importColumns andThen reorganiseColumns andThen convert andThen exportColumns andThen println)
+      .foreach(importColumns andThen reorganiseColumns andThen convert andThen renderYnabRow andThen println)
   }
 
-  def cleanup(s: String) = s.replace("\"", "").replaceAll("\\s\\s*", " ").trim
-
-  def cleanupNumeric(s: String) = Try(BigDecimal(
+  private def cleanupNumeric(s: String) = Try(BigDecimal(
     s.replace(comma, ".").replaceAll("\\s", "").replace("PLN", "")
   )).getOrElse(sys.error(s"Could not parse numeric $s"))
 
-  def importColumns = (data: String) => data.split(separator).toSeq.map(cleanup) match {
+  private def importColumns = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(date, odbiorca, rachunek, tytul, kwota) =>
-      Column(
+      Row(
         data = DateTime.parse(date, DateTimeFormat.forPattern(dateFormat)),
         odbiorca = odbiorca,
         rachunek = rachunek,
@@ -51,18 +49,17 @@ object Alior {
     case x => sys.error(s"invalid column format $x")
   }
 
-  def reorganiseColumns = (column: Column) => Ynab.Column(
+  private def reorganiseColumns = (column: Row) => Ynab.Row(
     // TODO reformat date
-    date = column.data.toString(Ynab.dateFormat),
+    date = column.data,
     payee = column.odbiorca,
     memo = column.tytul,
     inflow = column.kwota
   )
 
-  def convertCurrency(rate: BigDecimal) = (column: Ynab.Column) =>
+  private def convertCurrency(rate: BigDecimal) = (column: Ynab.Row) =>
     column.copy(
       inflow = column.inflow * rate
     )
 
-  def exportColumns = (column: Ynab.Column) => column.toCsv.mkString(Ynab.ynabSeparator)
 }

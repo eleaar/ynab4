@@ -1,14 +1,12 @@
 package org.krz
 
-
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 
 import scala.io.Source
 
 object SocieteGenerale {
 
-  case class Column(
+  private case class Row(
     date: DateTime,
     libelle: String,
     detail: String,
@@ -16,45 +14,38 @@ object SocieteGenerale {
     devise: String
   )
 
-  val encoding = "Windows-1250"
-  val separator = ";"
-  val comma = ","
-  val dateFormat = "dd/mm/YYYY"
+  private val encoding = "Windows-1250"
+  private val separator = ";"
+  private val dateFormat = "dd/mm/YYYY"
 
   def main(args: Array[String]): Unit = {
-    val input = args.lift(0).getOrElse(sys.error("Please provide input file as first argument"))
+    val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
 
-    println(Ynab.ynabColumns.mkString(Ynab.ynabSeparator))
+    println(Ynab.ynabHeader)
     Source.fromFile(input, encoding).getLines()
       .drop(2) // meta at the beginning
       .drop(1) // headers
       .takeWhile(_.nonEmpty) // discard last few lines
-      .foreach(importColumns andThen reorganiseColumns andThen exportColumns andThen println)
+      .foreach(importRow andThen reorganiseColumns andThen renderYnabRow andThen println)
   }
 
-  def cleanup(s: String) = s.replace("\"", "").replaceAll("\\s\\s*", " ").trim
-
-  def cleanupNumeric(s: String) = BigDecimal(s.replace(",", ".").replaceAll("\\s", ""))
-
-  def importColumns = (data: String) => data.split(separator).toSeq.map(cleanup) match {
+  private def importRow = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(date, libelle, detail, montant, devise) =>
-      Column(
-        date = DateTime.parse(date, DateTimeFormat.forPattern(dateFormat)),
+      Row(
+        date = cleanupDate(date, dateFormat),
         libelle = libelle,
         detail = detail,
         montant = cleanupNumeric(montant),
         devise = devise
       )
-    case x => sys.error(s"invalid column format $x")
+    case x => sys.error(s"unexpected row format $x")
   }
 
-  def reorganiseColumns = (column: Column) => Ynab.Column(
-    // TODO reformat date
-    date = column.date.toString(Ynab.dateFormat),
-    payee = column.detail,
-    memo = column.detail,
-    inflow = column.montant
+  private def reorganiseColumns = (row: Row) => Ynab.Row(
+    date = row.date,
+    payee = row.detail,
+    memo = row.detail,
+    inflow = row.montant
   )
 
-  def exportColumns = (column: Ynab.Column) => column.toCsv.mkString(Ynab.ynabSeparator)
 }

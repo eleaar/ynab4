@@ -4,36 +4,31 @@ import scala.io.Source
 
 object Mbank {
 
-  val mbankEncoding = "Windows-1250"
-  val mbankSeparator = ";"
-  val mbankComma = ","
+  private val mbankEncoding = "Windows-1250"
+  private val mbankSeparator = ";"
+  private val dateFormat = "dd/mm/YYYY"
 
   def main(args: Array[String]): Unit = {
-    val input = args.lift(0).getOrElse(sys.error("Please provide input file as first argument"))
+    val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
 
-    println(Ynab.ynabColumns.mkString(Ynab.ynabSeparator))
+    println(Ynab.ynabHeader)
     Source.fromFile(input, mbankEncoding).getLines()
       .drop(37) // meta at the beginning
       .drop(1) // headers
       .takeWhile(_.nonEmpty) // discard last few lines
-      .foreach(importColumns andThen reorganiseColumns andThen exportColumns andThen println)
+      .foreach(importColumns andThen reorganiseColumns andThen renderYnabRow andThen println)
   }
 
-  def cleanup(s: String) = s.replace("\"", "").replaceAll("\\s\\s*", " ").trim
+  private def importColumns = (data: String) => data.split(mbankSeparator).toSeq.map(cleanupQuotes)
 
-  def cleanupNumeric(s: String) = BigDecimal(s.replace(",", ".").replaceAll("\\s", ""))
-
-  def importColumns = (data: String) => data.split(mbankSeparator).toSeq.map(cleanup)
-
-  def reorganiseColumns = (column: Seq[String]) => {
-    Ynab.Column(
+  private def reorganiseColumns = (column: Seq[String]) => {
+    Ynab.Row(
       // TODO reformat date
-      date = column(0),
+      date = cleanupDate(column(0), dateFormat),
       payee = column(4),
       memo = column(3),
       inflow = cleanupNumeric(column(6))
     )
   }
 
-  def exportColumns = (column: Ynab.Column) => column.toCsv.mkString(Ynab.ynabSeparator)
 }
