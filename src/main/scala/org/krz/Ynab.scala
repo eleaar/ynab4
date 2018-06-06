@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 object Ynab {
 
   private val ynabSeparator = ","
-  private val ynabColumns = Seq("Date", "Category", "Payee", "Memo", "Inflow", "Outflow")
+  private val ynabColumns = Seq("Date", "Payee", "Category",  "Memo", "Outflow", "Inflow")
   private val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
   val ynabHeader: String = ynabColumns.mkString(Ynab.ynabSeparator)
@@ -26,11 +26,11 @@ object Ynab {
 
       Seq(
         date.format(dateFormat),
-        category,
         stringToCsv(payee),
+        category,
         stringToCsv(memo),
-        numberToCsv(inflow),
-        outflow
+        outflow,
+        numberToCsv(inflow)
       ).mkString(Ynab.ynabSeparator)
     }
   }

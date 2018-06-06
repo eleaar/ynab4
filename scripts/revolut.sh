@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-INPUT=data/sg-in.csv
-OUTPUT=data/sg-out.csv
-MAINCLASS=org.krz.SocieteGenerale
+INPUT=data/revolut-in.csv
+OUTPUT=data/revolut-out.csv
+MAINCLASS=org.krz.Revolut
 
 sbt "runMain $MAINCLASS $INPUT" | sed '1,12d' | ghead -n -4 > $OUTPUT
 if [ `wc -l < $INPUT` != `wc -l < $OUTPUT` ]; then
