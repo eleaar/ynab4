@@ -4,6 +4,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import scala.io.Source
+import scala.util.Try
 
 object Revolut {
 
@@ -25,21 +26,18 @@ object Revolut {
 
   def main(args: Array[String]): Unit = {
     val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
+    val conversionRate: BigDecimal = args.lift(1).flatMap(x => Try(BigDecimal(x)).toOption).getOrElse(1)
+    val convert = convertCurrency(conversionRate)
 
     println(Ynab.ynabHeader)
     Source.fromFile(input, encoding).getLines()
       .drop(1) // headers
       .takeWhile(_.nonEmpty) // discard last few lines
-      .foreach(importRow andThen reorganiseColumns andThen renderYnabRow andThen println)
+      .foreach(importRow andThen reorganiseColumns andThen convert andThen renderYnabRow andThen println)
   }
 
   private def importRow = (data: String) => data.split(separator).toSeq.map(cleanupQuotes) match {
     case Seq(completedDate, reference, paidOut, paidIn, exchangeIn, exchangeOut, balance, category, notes) =>
-//      println(data)
-//      println(LocalDate.now().format(DateTimeFormatter.ofPattern("L dd, yyyy")))
-//      println(LocalDate.now().format(DateTimeFormatter.ofPattern("LLL dd, yyyy")))
-//      println(LocalDate.now().format(DateTimeFormatter.ofPattern("M dd, yyyy")))
-//      println(LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")))
       Row(
         completedDate = LocalDate.parse(completedDate, dateFormat),
         reference = reference,
@@ -54,11 +52,21 @@ object Revolut {
     case x => sys.error(s"unexpected row format $x")
   }
 
+  private def cleanupNumeric(s: String): BigDecimal = Try(
+    BigDecimal(s.replace(",", "").replaceAll("\\s", ""))
+  ).getOrElse(sys.error(s"Could not parse numeric $s"))
+
+
   private def reorganiseColumns = (row: Row) => Ynab.Row(
     date = row.completedDate,
     payee = row.reference,
     memo = row.reference,
     inflow = row.paidIn orElse row.paidOut.map(_ * -1) getOrElse 0
   )
+
+  private def convertCurrency(rate: BigDecimal) = (column: Ynab.Row) =>
+    column.copy(
+      inflow = column.inflow * rate
+    )
 
 }
