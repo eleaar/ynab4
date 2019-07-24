@@ -22,7 +22,7 @@ object Revolut {
 
   private val encoding = "UTF-8"
   private val separator = ";"
-  private val dateFormat = DateTimeFormatter.ofPattern("MMM d, yyyy")
+  private val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy")
 
   def main(args: Array[String]): Unit = {
     val input = args.headOption.getOrElse(sys.error("Please provide input file as first argument"))
